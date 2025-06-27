@@ -36,7 +36,7 @@ networks:
     - openwebui
 ```
 
-Run `docker compose up -d`, visit `localhost:8080` in a browser, navigate to `Admin Panel->Web Search` and under the "Loader" set
+Run `docker compose up -d`, visit `localhost:8080` in a browser, navigate to `Admin Panel->Web Search` and under the "Loader" section, set
 
     Web Loader Engine: external
     External Web Loader URL: http://crawl4ai-proxy:8000/crawl

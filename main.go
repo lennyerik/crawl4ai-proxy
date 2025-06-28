@@ -6,13 +6,33 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 )
 
-const IP = "" // leave blank for all addresses
-const PORT = 8000
-const CRAWL4AIENDPOINT = "http://crawl4ai:11235/crawl"
+var (
+	LISTEN_IP         string = ""
+	LISTEN_PORT       int    = 8000
+	CRAWL4AI_ENDPOINT        = "http://crawl4ai:11235/crawl"
+)
 
-// const CRAWL4AIENDPOINT = "http://localhost:11235/crawl"
+func ReadEnvironment() {
+	portStr := os.Getenv("LISTEN_PORT")
+	port, err := strconv.Atoi(portStr)
+	if err == nil {
+		LISTEN_PORT = port
+	}
+
+	ip := os.Getenv("LISTEN_IP")
+	if ip != "" {
+		LISTEN_IP = ip
+	}
+
+	endpoint := os.Getenv("CRAWL4AI_ENDPOINT")
+	if endpoint != "" {
+		CRAWL4AI_ENDPOINT = endpoint
+	}
+}
 
 // For the openwebui-facing endpoint
 type Request struct {
@@ -87,7 +107,7 @@ func CrawlEndpoint(response http.ResponseWriter, request *http.Request) {
 
 	log.Printf("Request to crawl %s from %s\n", requestData.Urls, request.RemoteAddr)
 
-	req, err := http.NewRequest("POST", CRAWL4AIENDPOINT, bytes.NewReader(jsonEncodeInfallible(requestData)))
+	req, err := http.NewRequest("POST", CRAWL4AI_ENDPOINT, bytes.NewReader(jsonEncodeInfallible(requestData)))
 	if err != nil {
 		panic(err)
 	}
@@ -137,9 +157,11 @@ func CrawlEndpoint(response http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
+	ReadEnvironment()
+
 	http.HandleFunc("/crawl", CrawlEndpoint)
 
-	listenAddress := fmt.Sprintf("%s:%d", IP, PORT)
+	listenAddress := fmt.Sprintf("%s:%d", LISTEN_IP, LISTEN_PORT)
 	log.Printf("Listening on %s\n", listenAddress)
 
 	err := http.ListenAndServe(listenAddress, nil)

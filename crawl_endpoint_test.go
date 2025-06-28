@@ -2,10 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"strings"
 	"testing"
 )
+
+func init() {
+	log.SetOutput(io.Discard)
+}
 
 type TestResponse struct {
 	header     http.Header

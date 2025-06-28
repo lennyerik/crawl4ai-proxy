@@ -9,6 +9,9 @@ Given a `compose.yml` file that looks something like this:
 services:
     crawl4ai-proxy:
         build: . (or whereever this repo is)
+        environment:
+            - LISTEN_PORT=8000
+            - CRAWL4AI_ENDPOINT=http://crawl4ai:11235/crawl
         networks:
             - openwebui
 

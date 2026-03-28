@@ -12,6 +12,8 @@ services:
         environment:
             - LISTEN_PORT=8000
             - CRAWL4AI_ENDPOINT=http://crawl4ai:11235/crawl
+            - CRAWL4AI_BROWSER_CONFIG={}
+            - CRAWL4AI_CRAWLER_CONFIG={}
         networks:
             - openwebui
 

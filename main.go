@@ -11,9 +11,11 @@ import (
 )
 
 var (
-	LISTEN_IP         string = ""
-	LISTEN_PORT       int    = 8000
-	CRAWL4AI_ENDPOINT        = "http://crawl4ai:11235/crawl"
+	LISTEN_IP               string = ""
+	LISTEN_PORT             int    = 8000
+	CRAWL4AI_ENDPOINT              = "http://crawl4ai:11235/crawl"
+	CRAWL4AI_BROWSER_CONFIG        = map[string]interface{}{}
+	CRAWL4AI_CRAWLER_CONFIG        = map[string]interface{}{}
 )
 
 func ReadEnvironment() {
@@ -32,11 +34,29 @@ func ReadEnvironment() {
 	if endpoint != "" {
 		CRAWL4AI_ENDPOINT = endpoint
 	}
+
+	browser_config := os.Getenv("CRAWL4AI_BROWSER_CONFIG")
+	if browser_config != "" {
+		err = json.Unmarshal([]byte(browser_config), &CRAWL4AI_BROWSER_CONFIG)
+		if err != nil {
+			log.Printf("Ignoring invalid CRAWL4AI_BROWSER_CONFIG")
+		}
+	}
+
+	crawler_config := os.Getenv("CRAWL4AI_CRAWLER_CONFIG")
+	if crawler_config != "" {
+		err = json.Unmarshal([]byte(crawler_config), &CRAWL4AI_CRAWLER_CONFIG)
+		if err != nil {
+			log.Printf("Ignoring invalid CRAWL4AI_CRAWLER_CONFIG")
+		}
+	}
 }
 
 // For the openwebui-facing endpoint
 type Request struct {
-	Urls []string `json:"urls"`
+	Urls          []string               `json:"urls"`
+	BrowserConfig map[string]interface{} `json:"browser_config"`
+	CrawlerConfig map[string]interface{} `json:"crawler_config"`
 }
 
 type SuccessResponseItem struct {
@@ -105,13 +125,17 @@ func CrawlEndpoint(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	log.Printf("Request to crawl %s from %s\n", requestData.Urls, request.RemoteAddr)
+	requestData.BrowserConfig = CRAWL4AI_BROWSER_CONFIG
+	requestData.CrawlerConfig = CRAWL4AI_CRAWLER_CONFIG
+
+	log.Printf("Request to crawl %s from %s with configuration options %s and %s\n", requestData.Urls, request.RemoteAddr, jsonEncodeInfallible(requestData.BrowserConfig), jsonEncodeInfallible(requestData.CrawlerConfig))
 
 	req, err := http.NewRequest("POST", CRAWL4AI_ENDPOINT, bytes.NewReader(jsonEncodeInfallible(requestData)))
 	if err != nil {
 		panic(err)
 	}
 
+	req.Header.Set("Content-Type", "application/json")
 	crawlResponse, err := http.DefaultClient.Do(req)
 	if err != nil || crawlResponse.StatusCode != 200 {
 		response.WriteHeader(502)
